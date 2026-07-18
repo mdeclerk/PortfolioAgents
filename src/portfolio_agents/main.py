@@ -3,7 +3,8 @@
 main() is the CLI edge: load .env, quiet ib_async's duplicate log channel, then
 asyncio.run(main_async(...)) — the only asyncio.run in the codebase — with the one
 error rule: FatalError becomes a single stderr line and exit 1, tracebacks are for
-bugs. main_async() owns the whole async lifecycle. The three demo flags (--demo /
+bugs. main_async() is the composition root: it wires real or fake dependencies, hands
+the pipeline its connection, and writes the report. The three demo flags (--demo /
 --fake-ibkr / --fake-openai) are the one deliberate exception to the zero-flag
 design, for dev/demo ergonomics — no pipeline knobs are exposed.
 """
@@ -83,22 +84,18 @@ async def main_async(args: argparse.Namespace) -> None:
 
     tracker = StageTracker()
     with tracker.live():
-        tracker.stage("connect")
-        if fake_ibkr:
-            connection = fake_ibkr_connection()
-            tracker.log("fake IBKR client")
-        else:
-            connection = ibkr_connection(settings)
-            tracker.log(f"IBKR at {settings.ib_host}:{settings.ib_port}")
-        async with connection as client:
-            tracker.log("connected (read-only)")
-            result = await run_pipeline(
-                client,
-                log=tracker.log,
-                stage=tracker.stage,
-                run_config=run_config,
-                cache_path=cache_path,
-            )
+        connection = (
+            fake_ibkr_connection(tracker.log)
+            if fake_ibkr
+            else ibkr_connection(settings, tracker.log)
+        )
+        result = await run_pipeline(
+            connection,
+            log=tracker.log,
+            stage=tracker.stage,
+            run_config=run_config,
+            cache_path=cache_path,
+        )
         tracker.stage("report")
         prefix = "demo-report" if (fake_ibkr or fake_openai) else "report"
         path = next_report_path(prefix=prefix)

@@ -13,15 +13,14 @@ from portfolio_agents.models import PortfolioAssessment, PositionAssessment
 
 async def test_full_pipeline_offline():
     stages: list[str] = []
-    async with fake_ibkr_connection() as client:
-        result = await pipeline.run_pipeline(
-            client,
-            log=lambda _msg: None,
-            stage=stages.append,
-            run_config=RunConfig(model=FakeModel()),
-            cache_path=Path(":memory:"),
-        )
-    assert stages == ["fetch", "metrics", "positions", "portfolio"]
+    result = await pipeline.run_pipeline(
+        fake_ibkr_connection(log=lambda _msg: None),
+        log=lambda _msg: None,
+        stage=stages.append,
+        run_config=RunConfig(model=FakeModel()),
+        cache_path=Path(":memory:"),
+    )
+    assert stages == ["connect", "fetch", "metrics", "positions", "portfolio"]
     symbols = [p.symbol for p in result.snapshot.positions]
     assert [a.symbol for a in result.assessments] == symbols  # fan-out preserves order
     assert all(isinstance(a, PositionAssessment) for a in result.assessments)
@@ -32,11 +31,10 @@ async def test_full_pipeline_offline():
 
 async def test_timeout_becomes_fatal_error(monkeypatch):
     monkeypatch.setattr(pipeline, "PIPELINE_TIMEOUT_S", 0)
-    async with fake_ibkr_connection() as client:
-        with pytest.raises(FatalError, match="timed out after 0s"):
-            await pipeline.run_pipeline(
-                client,
-                log=lambda _msg: None,
-                run_config=RunConfig(model=FakeModel()),
-                cache_path=Path(":memory:"),
-            )
+    with pytest.raises(FatalError, match="timed out after 0s"):
+        await pipeline.run_pipeline(
+            fake_ibkr_connection(log=lambda _msg: None),
+            log=lambda _msg: None,
+            run_config=RunConfig(model=FakeModel()),
+            cache_path=Path(":memory:"),
+        )

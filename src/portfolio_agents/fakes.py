@@ -14,7 +14,7 @@ import datetime as dt
 import json
 import math
 import random
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 
 import pandas as pd
@@ -212,8 +212,11 @@ class FakeIBKRClient:
 
 
 @contextlib.asynccontextmanager
-async def fake_ibkr_connection() -> AsyncIterator[FakeIBKRClient]:
+async def fake_ibkr_connection(
+    log: Callable[[str], None] = print,
+) -> AsyncIterator[FakeIBKRClient]:
     """Mirrors ibkr_connection()'s shape; yields a FakeIBKRClient (no connect/disconnect)."""
+    log("fake IBKR client")
     yield FakeIBKRClient()
 
 

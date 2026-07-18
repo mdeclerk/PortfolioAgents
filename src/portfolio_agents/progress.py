@@ -34,6 +34,7 @@ class StageTracker:
 
     def stage(self, name: str) -> None:
         """Mark the current phase done and start `name` spinning."""
+        assert name in self._phases, f"unknown phase {name!r}, expected one of {self._phases}"
         self._finish("✔", "green")
         self._current = name, self._progress.add_task(name, total=1, detail="")
 

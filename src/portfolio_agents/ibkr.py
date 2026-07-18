@@ -109,8 +109,11 @@ class IBKRClient:
 
 
 @contextlib.asynccontextmanager
-async def ibkr_connection(settings: Settings) -> AsyncIterator[IBKRClient]:
+async def ibkr_connection(
+    settings: Settings, log: Callable[[str], None] = print
+) -> AsyncIterator[IBKRClient]:
     """Owns the connect/disconnect lifecycle of the one IB session."""
+    log(f"IBKR at {settings.ib_host}:{settings.ib_port}")
     ib = IB()
     # Failed requests should raise (with IBKR's reason) instead of resolving empty,
     # so build_snapshot can record the reason as a gap.
@@ -124,6 +127,7 @@ async def ibkr_connection(settings: Settings) -> AsyncIterator[IBKRClient]:
             f"could not connect to TWS/IB Gateway at {settings.ib_host}:{settings.ib_port} — "
             f"is it running with API access enabled? ({e})"
         ) from e
+    log("connected (read-only)")
     try:
         yield IBKRClient(ib)
     finally:

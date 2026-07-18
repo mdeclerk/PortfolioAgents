@@ -1,7 +1,9 @@
-"""The fan-out/fan-in orchestrator: snapshot → metrics → N position runs → portfolio synthesis.
+"""The fan-out/fan-in orchestrator: connect → snapshot → metrics → N position runs → synthesis.
 
 Control flow is plain async code — each stage a Runner.run, fan-out an asyncio.gather
-behind a semaphore, the whole run inside one trace and one timeout.
+behind a semaphore, the whole run inside one trace and one timeout. The IBKR session
+is entered here and released right after the fetch stage — the LLM stages never hold
+it open.
 """
 
 import asyncio
@@ -54,7 +56,7 @@ class PipelineResult:
 
 
 async def run_pipeline(
-    client: IBKRClient,
+    connection: contextlib.AbstractAsyncContextManager[IBKRClient],
     log: Callable[[str], None] = print,
     stage: Callable[[str], None] = lambda _name: None,
     run_config: RunConfig | None = None,
@@ -62,9 +64,11 @@ async def run_pipeline(
 ) -> PipelineResult:
     async with _deadline():
         with trace("portfolio-analysis"):
-            stage("fetch")
-            with MarketDataCache(cache_path) as cache:
-                snapshot = await build_snapshot(client, cache, log)
+            stage("connect")
+            async with connection as client:
+                stage("fetch")
+                with MarketDataCache(cache_path) as cache:
+                    snapshot = await build_snapshot(client, cache, log)
             stage("metrics")
             metrics = compute_portfolio_metrics(snapshot)
             log("metrics computed")
