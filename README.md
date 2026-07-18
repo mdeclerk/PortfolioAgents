@@ -44,4 +44,4 @@ uv run portfolio-agents      # writes reports/report-NNN.md
    analyst sentiment via hosted web search; all claims cite dated sources.
 4. **Portfolio** — a tool-free PortfolioAnalyst synthesizes the account snapshot, portfolio metrics,
    and every position assessment into the portfolio view.
-5. **Report** — deterministic markdown render; the final report is not an LLM call.
+5. **Report** — deterministic markdown render
