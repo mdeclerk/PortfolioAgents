@@ -22,7 +22,7 @@ uv run portfolio-agents --demo   # fake IBKR data + fake LLM
 
 ### Real run
 
-> ⚠️ **Information:** The IB connection is read-only — the agents analyse, they never trade.
+> ⚠️ The IB connection is read-only — the agents analyse, they never trade.
 
 Requires [TWS](https://www.interactivebrokers.com/en/trading/tws.php) or
 [IB Gateway](https://www.interactivebrokers.com/en/trading/ibgateway-stable.php) running with API access enabled (paper account recommended), plus an [OpenAI API key](https://platform.openai.com/).
@@ -59,13 +59,13 @@ uv run pytest
 
 ## Evals
 
-[inspect-ai](https://inspect.aisi.org.uk) evals for the two production agents.
+[inspect-ai](https://inspect.aisi.org.uk) evals for the position and portfolio agents.
 
 ```sh
 uv sync --group evals
-uv run inspect eval evals/portfolio_task.py   # tool-free, single-turn, cheap — run first
-uv run inspect eval evals/position_task.py    # live web search, costs real searches
-uv run inspect view                           # browse transcripts, scores, judge reasoning
+uv run inspect eval evals/position_task.py
+uv run inspect eval evals/portfolio_task.py
+uv run inspect view
 ```
 
 The eval model defaults to the pipeline model (`INSPECT_EVAL_MODEL=openai/${OPENAI_DEFAULT_MODEL}` in `.env`). Logs land in `./logs/`.
@@ -96,5 +96,3 @@ The eval model defaults to the pipeline model (`INSPECT_EVAL_MODEL=openai/${OPEN
 | `stance_expected` | Code-check | stance within the expected set (directional cases only) |
 | `citations_ok` | Code-check | no source, no claim; sources dated with http(s) urls (position only) |
 | `rubric_judge` | LLM | C/P/I per case against its `target`: groundedness, gap handling, justification, read-only rule |
-
-
