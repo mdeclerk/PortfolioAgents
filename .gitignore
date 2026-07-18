@@ -10,3 +10,4 @@ wheels/
 .ruff_cache/
 .cache/
 reports/
+logs/

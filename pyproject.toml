@@ -30,11 +30,14 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "ruff>=0.15.22",
 ]
+evals = [
+    "inspect-ai>=0.3.248",
+]
 
 [tool.ruff]
 line-length = 100
 target-version = "py314"
-src = ["src", "tests"]
+src = ["src", "tests", "evals"]
 
 [tool.ruff.lint]
 select = [
