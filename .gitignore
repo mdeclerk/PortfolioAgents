@@ -11,3 +11,4 @@ wheels/
 .cache/
 reports/
 logs/
+.DS_Store
