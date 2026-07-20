@@ -4,7 +4,7 @@
 import datetime as dt
 from pathlib import Path
 
-from factories import (
+from portfolio_agents.factories import (
     make_account,
     make_assessment,
     make_metrics,

@@ -5,7 +5,7 @@ import datetime as dt
 
 import pytest
 
-from factories import make_account, make_bars, make_position
+from portfolio_agents.factories import make_account, make_bars, make_position
 from portfolio_agents.metrics import compute_portfolio_metrics, compute_position_metrics
 from portfolio_agents.models import PortfolioSnapshot, SentimentTicks
 

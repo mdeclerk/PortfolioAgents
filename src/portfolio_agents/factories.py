@@ -1,5 +1,5 @@
 """Hand-buildable model instances: every optional field defaults to None/empty, so a
-test names only the fields it is about."""
+caller names only the fields it is about. Shared by tests/ and evals/."""
 
 import datetime as dt
 
@@ -7,6 +7,7 @@ from portfolio_agents.models import (
     AccountSummary,
     DailyPoint,
     PortfolioAssessment,
+    PortfolioMetrics,
     PositionAssessment,
     PositionMetrics,
     PositionSnapshot,
@@ -63,6 +64,16 @@ def make_metrics(**overrides: object) -> PositionMetrics:
         "con_id": 1,
     }
     return PositionMetrics(**(fields | overrides))
+
+
+def make_portfolio_metrics(**overrides: object) -> PortfolioMetrics:
+    fields: dict[str, object] = dict.fromkeys(PortfolioMetrics.model_fields) | {
+        "currency_exposure": {},
+        "sector_exposure": {},
+        "asset_class_exposure": {},
+        "positions": [],
+    }
+    return PortfolioMetrics(**(fields | overrides))
 
 
 def make_account(**overrides: object) -> AccountSummary:

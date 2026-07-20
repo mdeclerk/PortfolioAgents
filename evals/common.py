@@ -1,23 +1,22 @@
-"""Shared eval plumbing: the agent bridge and the JSON case loader.
+"""Shared eval plumbing: the agent bridge and the case→Sample loader.
 
 The bridge runs the unmodified production agents from analysts.py inside an
 inspect task by routing their OpenAI calls through inspect's model provider
 (`RunConfig(model="inspect")`) — hosted WebSearchTool included, so the eval
 model must be an OpenAI one.
 
-Case files are sparse: each record names only the fields the case is about and
-the loader merges them into null-default models, so the serialized input matches
-what pipeline.py sends (same shape, indent=2, raw series excluded).
+Cases are sparse Python objects (evals/cases/): each names only the fields it is
+about, built on null-default factory models, so the serialized input matches what
+pipeline.py sends (same shape, indent=2, raw series excluded).
 """
 
 import json
-from pathlib import Path
 from typing import Any
 
 from agents import Agent as SDKAgent
 from agents import AgentOutputSchema, AgentOutputSchemaBase, RunConfig, Runner
 from inspect_ai.agent import Agent, AgentState, agent, agent_bridge
-from inspect_ai.dataset import Dataset, Sample, json_dataset
+from inspect_ai.dataset import Dataset, MemoryDataset, Sample
 from inspect_ai.model import (
     ChatMessage,
     ContentText,
@@ -28,43 +27,11 @@ from inspect_ai.model import (
 from inspect_ai.tool import ToolChoice, ToolInfo
 from pydantic import BaseModel
 
-from portfolio_agents.models import (
-    AccountSummary,
-    PortfolioMetrics,
-    PositionAssessment,
-    PositionMetrics,
-    PositionSnapshot,
-)
-
-EVALS_DIR = Path(__file__).parent
+from cases.portfolio import PORTFOLIO_CASES, PortfolioCase
+from cases.position import POSITION_CASES, PositionCase
 
 # pipeline.py never sends raw series to the agents; mirror its exclusion.
 _SERIES_FIELDS = {"bars", "iv_series", "hv_series"}
-
-_POSITION_DEFAULTS: dict[str, Any] = {
-    "description": "",
-    "sec_type": "STK",
-    "currency": "USD",
-    "position": 100.0,
-    "gaps": [],
-}
-_ACCOUNT_DEFAULTS: dict[str, Any] = {"account": "EVAL", "base_currency": "USD"}
-_PORTFOLIO_METRICS_DEFAULTS: dict[str, Any] = {
-    "currency_exposure": {},
-    "sector_exposure": {},
-    "asset_class_exposure": {},
-    "positions": [],
-}
-_ASSESSMENT_DEFAULTS: dict[str, Any] = {
-    "headline": "",
-    "stance": "neutral",
-    "technical_read": "",
-    "volatility_read": "",
-    "sentiment_read": "",
-    "catalysts": "",
-    "risks": [],
-    "sources": [],
-}
 
 
 def _inline_refs(schema: object, defs: dict[str, Any]) -> object:
@@ -156,52 +123,35 @@ def bridged(sdk_agent: SDKAgent, max_turns: int = 1) -> Agent:
     return execute
 
 
-def _fill[M: BaseModel](model_cls: type[M], defaults: dict[str, Any], values: dict[str, Any]) -> M:
-    """Every unnamed field is None (as in tests/factories.py), then defaults, then the case."""
-    fields = dict.fromkeys(model_cls.model_fields) | defaults | values
-    return model_cls(**fields)
-
-
-def _sample(record: dict[str, Any], payload: dict[str, Any]) -> Sample:
+def _sample(case_id: str, payload: dict[str, Any], target: str, checks: dict[str, Any]) -> Sample:
     return Sample(
-        id=record["id"],
+        id=case_id,
         input=json.dumps(payload, indent=2),
-        target=record["target"],
-        metadata={"checks": record.get("checks", {}), "payload": payload},
+        target=target,
+        metadata={"checks": checks, "payload": payload},
     )
 
 
-def _position_sample(record: dict[str, Any]) -> Sample:
-    position = _fill(PositionSnapshot, _POSITION_DEFAULTS, record["position"])
-    metrics = _fill(PositionMetrics, {}, record["metrics"])
+def _position_sample(case: PositionCase) -> Sample:
     payload = {
-        "position": position.model_dump(mode="json", exclude=_SERIES_FIELDS),
-        "metrics": metrics.model_dump(mode="json"),
+        "position": case.position.model_dump(mode="json", exclude=_SERIES_FIELDS),
+        "metrics": case.metrics.model_dump(mode="json"),
     }
-    return _sample(record, payload)
+    return _sample(case.id, payload, case.target, case.checks)
 
 
-def _portfolio_sample(record: dict[str, Any]) -> Sample:
-    account = _fill(AccountSummary, _ACCOUNT_DEFAULTS, record.get("account", {}))
-    raw_metrics = record["portfolio_metrics"]
-    positions = [_fill(PositionMetrics, {}, p) for p in raw_metrics.get("positions", [])]
-    metrics = _fill(
-        PortfolioMetrics, _PORTFOLIO_METRICS_DEFAULTS, raw_metrics | {"positions": positions}
-    )
-    assessments = [
-        _fill(PositionAssessment, _ASSESSMENT_DEFAULTS, a) for a in record["position_assessments"]
-    ]
+def _portfolio_sample(case: PortfolioCase) -> Sample:
     payload = {
-        "account": account.model_dump(mode="json"),
-        "portfolio_metrics": metrics.model_dump(mode="json"),
-        "position_assessments": [a.model_dump(mode="json") for a in assessments],
+        "account": case.account.model_dump(mode="json"),
+        "portfolio_metrics": case.portfolio_metrics.model_dump(mode="json"),
+        "position_assessments": [a.model_dump(mode="json") for a in case.position_assessments],
     }
-    return _sample(record, payload)
+    return _sample(case.id, payload, case.target, case.checks)
 
 
 def position_cases() -> Dataset:
-    return json_dataset(str(EVALS_DIR / "cases" / "position.json"), _position_sample)
+    return MemoryDataset([_position_sample(case) for case in POSITION_CASES])
 
 
 def portfolio_cases() -> Dataset:
-    return json_dataset(str(EVALS_DIR / "cases" / "portfolio.json"), _portfolio_sample)
+    return MemoryDataset([_portfolio_sample(case) for case in PORTFOLIO_CASES])
