@@ -252,5 +252,9 @@ them), or GRADE: I (fails the criterion or a dimension).
 
 
 def rubric_judge() -> Scorer:
-    """One model-graded rubric per case, graded against the case's target description."""
+    """One model-graded rubric per case, graded against the case's target description.
+
+    Grading uses the pinned "grader" model role (bound in tasks.py), never the
+    candidate model being evaluated.
+    """
     return model_graded_qa(instructions=_JUDGE_INSTRUCTIONS, partial_credit=True)

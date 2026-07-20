@@ -9,6 +9,8 @@ one and each run costs real searches.
     uv run inspect eval evals/tasks.py@position         # live web search — costs searches
 """
 
+import os
+
 from inspect_ai import Task, task
 
 from common import bridged, portfolio_cases, position_cases
@@ -23,6 +25,11 @@ from scorers import (
     stance_expected,
     valid_output,
 )
+
+# The rubric judge must not follow the candidate model (self-grading, and scores stop
+# being comparable across --model runs); pinned via .env, per-run override with
+# --model-role grader=...
+GRADER_MODEL = os.environ.get("INSPECT_GRADER_MODEL", "openai/gpt-5.6-luna")
 
 # The portfolio agent has no web research: every field must stay grounded in the input.
 _PORTFOLIO_FIELDS = (
@@ -45,6 +52,7 @@ def portfolio() -> Task:
     return Task(
         dataset=portfolio_cases(),
         solver=bridged(portfolio_analyst),
+        model_roles={"grader": GRADER_MODEL},
         scorer=[
             valid_output(PortfolioAssessment),
             numbers_grounded(_PORTFOLIO_FIELDS),
@@ -59,6 +67,7 @@ def position() -> Task:
     return Task(
         dataset=position_cases(),
         solver=bridged(position_analyst, max_turns=MAX_TURNS),
+        model_roles={"grader": GRADER_MODEL},
         scorer=[
             valid_output(PositionAssessment),
             numbers_grounded(_POSITION_METRIC_FIELDS),
