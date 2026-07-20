@@ -63,8 +63,7 @@ uv run pytest
 
 ```sh
 uv sync --group evals
-uv run inspect eval evals/position_task.py
-uv run inspect eval evals/portfolio_task.py
+uv run inspect eval evals/tasks.py
 uv run inspect view
 ```
 

@@ -1,4 +1,4 @@
-"""Designed whole-book cases for the PortfolioAnalyst eval (evals/portfolio_task.py).
+"""Designed whole-book cases for the PortfolioAnalyst eval (evals/tasks.py).
 
 Sparse like the position cases. `_account`/`_assessment` fix the same eval-wide defaults
 the old JSON loader applied (account label + base currency, empty position-assessment

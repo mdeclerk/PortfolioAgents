@@ -1,4 +1,4 @@
-"""Designed single-position cases for the PositionAnalyst eval (evals/position_task.py).
+"""Designed single-position cases for the PositionAnalyst eval (evals/tasks.py).
 
 Each case names only the snapshot/metric fields it is about; the factories default the
 rest to None so the serialized input matches what pipeline.py sends. `checks` drives the
