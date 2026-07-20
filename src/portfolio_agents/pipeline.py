@@ -21,6 +21,7 @@ from portfolio_agents.errors import FatalError
 from portfolio_agents.ibkr import IBKRClient, build_snapshot
 from portfolio_agents.metrics import compute_portfolio_metrics
 from portfolio_agents.models import (
+    AccountSummary,
     PortfolioAssessment,
     PortfolioMetrics,
     PortfolioSnapshot,
@@ -35,6 +36,25 @@ PIPELINE_TIMEOUT_S = 900  # one timeout around the whole pipeline
 
 # The agents never see raw series — all numbers arrive via metrics.
 _SERIES_FIELDS = {"bars", "iv_series", "hv_series"}
+
+
+def position_payload(position: PositionSnapshot, metrics: PositionMetrics) -> dict[str, object]:
+    """The PositionAnalyst's input payload. Single source of truth, shared with evals/."""
+    return {
+        "position": position.model_dump(mode="json", exclude=_SERIES_FIELDS),
+        "metrics": metrics.model_dump(mode="json"),
+    }
+
+
+def portfolio_payload(
+    account: AccountSummary, metrics: PortfolioMetrics, assessments: list[PositionAssessment]
+) -> dict[str, object]:
+    """The PortfolioAnalyst's input payload. Single source of truth, shared with evals/."""
+    return {
+        "account": account.model_dump(mode="json"),
+        "portfolio_metrics": metrics.model_dump(mode="json"),
+        "position_assessments": [a.model_dump(mode="json") for a in assessments],
+    }
 
 
 @contextlib.asynccontextmanager
@@ -82,10 +102,7 @@ async def run_pipeline(
                 position: PositionSnapshot, position_metrics: PositionMetrics
             ) -> PositionAssessment:
                 nonlocal done
-                payload = {
-                    "position": position.model_dump(mode="json", exclude=_SERIES_FIELDS),
-                    "metrics": position_metrics.model_dump(mode="json"),
-                }
+                payload = position_payload(position, position_metrics)
                 async with semaphore:
                     result = await Runner.run(
                         position_analyst,
@@ -102,11 +119,7 @@ async def run_pipeline(
             )
 
             stage("portfolio")
-            fan_in = {
-                "account": snapshot.account.model_dump(mode="json"),
-                "portfolio_metrics": metrics.model_dump(mode="json"),
-                "position_assessments": [a.model_dump(mode="json") for a in assessments],
-            }
+            fan_in = portfolio_payload(snapshot.account, metrics, assessments)
             result = await Runner.run(
                 portfolio_analyst, input=json.dumps(fan_in, indent=2), run_config=run_config
             )

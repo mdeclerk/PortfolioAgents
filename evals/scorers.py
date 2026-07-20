@@ -43,32 +43,27 @@ _DATE = re.compile(
 # claim market values.
 _ALLOWED = {float(n) for n in (*range(11), 12, 14, 50, 52, 200, *range(1990, 2101))}
 
-_MISSING_PHRASES = (
-    "missing",
-    "not available",
-    "unavailable",
-    "no data",
-    "n/a",
-    "lack",
-    "absent",
-    "not provided",
-    "no put/call",
-    "no sentiment",
-    "no implied",
-    "no iv",
-    "data gap",
-    "cannot be assessed",
-    "cannot assess",
+# Both are word-bounded: "lackluster" is not an acknowledged gap, "nonetheless" is not
+# a disclaimed search. False negatives on unusual phrasings are acceptable — the judge
+# reads the same text.
+_MISSING_RE = re.compile(
+    r"\b(?:missing|not\s+available|unavailable|no\s+data|n/a|not\s+applicable"
+    r"|lack(?:s|ing|ed)?|absent|insufficient|not\s+(?:provided|reported|supplied|populated)"
+    r"|no\s+(?:put/call|sentiment|implied|iv|hv|volatility)"
+    r"|data\s+gaps?|can(?:not|'t)\s+(?:be\s+)?(?:assess(?:ed)?|determined?))\b",
+    re.IGNORECASE,
 )
-_NO_NEWS_PHRASES = (
-    "no ",
-    "none",
-    "nothing",
-    "not find",
-    "could not",
-    "couldn't",
-    "unable",
-    "unknown",
+# A disclaimed empty search: "no <news-ish thing>" within one clause, or an explicit
+# failed-search phrasing. Commas break the "no ..." window so "no doubt, the news..."
+# does not count as a disclaimer.
+_NO_NEWS_RE = re.compile(
+    r"\bno\b[^.,;:]*\b(?:news|catalysts?|coverage|reports?|announcements?|sources?"
+    r"|filings?|headlines?|ratings?|targets?|developments?|events?)\b"
+    r"|\b(?:none|nothing)\b"
+    r"|\b(?:could|did)(?:\s+not|n't)\s+(?:find|locate|identify)\b"
+    r"|\bcan(?:not|'t)\s+(?:find|locate|identify)\b"
+    r"|\bunable\b|\bunknown\b",
+    re.IGNORECASE,
 )
 
 
@@ -174,11 +169,7 @@ def gaps_named() -> Scorer:
         data = _parsed(state)
         if data is None:
             return Score(value=INCORRECT, explanation="output is not valid JSON")
-        silent = [
-            field
-            for field in required
-            if not any(phrase in _field_text(data, field).lower() for phrase in _MISSING_PHRASES)
-        ]
+        silent = [field for field in required if not _MISSING_RE.search(_field_text(data, field))]
         if silent:
             return Score(
                 value=INCORRECT,
@@ -230,10 +221,8 @@ def citations_ok() -> Scorer:
                 problems.append(f"source without a dated reference: {source.get('title')!r}")
             if not str(source.get("url", "")).startswith(("http://", "https://")):
                 problems.append(f"source without an http(s) url: {source.get('title')!r}")
-        if not sources and catalysts.strip():
-            lowered = catalysts.lower()
-            if not any(phrase in lowered for phrase in _NO_NEWS_PHRASES):
-                problems.append("catalysts text present but sources are empty")
+        if not sources and catalysts.strip() and not _NO_NEWS_RE.search(catalysts):
+            problems.append("catalysts text present but sources are empty")
         if problems:
             return Score(value=INCORRECT, explanation="; ".join(problems))
         return Score(value=CORRECT, explanation=f"{len(sources)} well-formed dated source(s)")

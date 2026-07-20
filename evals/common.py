@@ -6,8 +6,8 @@ inspect task by routing their OpenAI calls through inspect's model provider
 model must be an OpenAI one.
 
 Cases are sparse Python objects (evals/cases/): each names only the fields it is
-about, built on null-default factory models, so the serialized input matches what
-pipeline.py sends (same shape, indent=2, raw series excluded).
+about, built on null-default factory models, serialized through pipeline.py's own
+payload builders so the input is exactly what production sends (indent=2 included).
 """
 
 import json
@@ -29,9 +29,7 @@ from pydantic import BaseModel
 
 from cases.portfolio import PORTFOLIO_CASES, PortfolioCase
 from cases.position import POSITION_CASES, PositionCase
-
-# pipeline.py never sends raw series to the agents; mirror its exclusion.
-_SERIES_FIELDS = {"bars", "iv_series", "hv_series"}
+from portfolio_agents.pipeline import portfolio_payload, position_payload
 
 
 def _inline_refs(schema: object, defs: dict[str, Any]) -> object:
@@ -133,19 +131,12 @@ def _sample(case_id: str, payload: dict[str, Any], target: str, checks: dict[str
 
 
 def _position_sample(case: PositionCase) -> Sample:
-    payload = {
-        "position": case.position.model_dump(mode="json", exclude=_SERIES_FIELDS),
-        "metrics": case.metrics.model_dump(mode="json"),
-    }
+    payload = position_payload(case.position, case.metrics)
     return _sample(case.id, payload, case.target, case.checks)
 
 
 def _portfolio_sample(case: PortfolioCase) -> Sample:
-    payload = {
-        "account": case.account.model_dump(mode="json"),
-        "portfolio_metrics": case.portfolio_metrics.model_dump(mode="json"),
-        "position_assessments": [a.model_dump(mode="json") for a in case.position_assessments],
-    }
+    payload = portfolio_payload(case.account, case.portfolio_metrics, case.position_assessments)
     return _sample(case.id, payload, case.target, case.checks)
 
 
