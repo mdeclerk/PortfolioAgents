@@ -62,7 +62,7 @@ uv run pytest
 [inspect-ai](https://inspect.aisi.org.uk) evals for the position and portfolio agents.
 
 ```sh
-uv sync --group evals
+uv sync
 uv run inspect eval evals/tasks.py
 uv run inspect view
 ```

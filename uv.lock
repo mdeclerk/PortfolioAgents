@@ -1151,12 +1151,10 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "inspect-ai" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
-]
-evals = [
-    { name = "inspect-ai" },
 ]
 
 [package.metadata]
@@ -1172,11 +1170,11 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "inspect-ai", specifier = ">=0.3.248" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-asyncio", specifier = ">=1.4.0" },
     { name = "ruff", specifier = ">=0.15.22" },
 ]
-evals = [{ name = "inspect-ai", specifier = ">=0.3.248" }]
 
 [[package]]
 name = "propcache"
