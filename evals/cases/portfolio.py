@@ -60,7 +60,7 @@ PORTFOLIO_CASES = [
             buying_power=150000.0,
         ),
         portfolio_metrics=make_portfolio_metrics(
-            gross_exposure=0.96,
+            gross_exposure=480000.0,
             hhi=0.44,
             top3_concentration=0.92,
             currency_exposure={"USD": 1.0},
@@ -107,7 +107,7 @@ PORTFOLIO_CASES = [
             buying_power=300000.0,
         ),
         portfolio_metrics=make_portfolio_metrics(
-            gross_exposure=0.98,
+            gross_exposure=740000.0,
             hhi=0.2,
             top3_concentration=0.6,
             currency_exposure={"USD": 0.5, "EUR": 0.3, "CHF": 0.2},
@@ -160,7 +160,7 @@ PORTFOLIO_CASES = [
             buying_power=120000.0,
         ),
         portfolio_metrics=make_portfolio_metrics(
-            gross_exposure=0.9,
+            gross_exposure=360000.0,
             hhi=0.26,
             top3_concentration=0.8,
             currency_exposure={"USD": 1.0},
@@ -242,7 +242,7 @@ PORTFOLIO_CASES = [
             buying_power=200000.0,
         ),
         portfolio_metrics=make_portfolio_metrics(
-            gross_exposure=0.95,
+            gross_exposure=570000.0,
             hhi=0.3,
             top3_concentration=0.85,
             currency_exposure={"USD": 0.9, "EUR": 0.1},
