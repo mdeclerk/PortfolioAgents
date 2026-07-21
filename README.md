@@ -1,11 +1,7 @@
 # Portfolio Agents
 
-Experimental agentic pipeline that analyses an equity portfolio using
-[Interactive Brokers](https://www.interactivebrokers.com/) (account + market data) and
-[OpenAI](https://openai.com/). Inspired by [TradingAgents](https://github.com/TauricResearch/TradingAgents).
+Experimental agentic pipeline that analyses a securities portfolio using [Interactive Brokers](https://www.interactivebrokers.com/) (account + market data) and [OpenAI](https://openai.com/). Inspired by [TradingAgents](https://github.com/TauricResearch/TradingAgents).
 
-![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)
-![uv](https://img.shields.io/badge/uv-dependency%20management-DE5FE9?logo=uv&logoColor=white)
 ![OpenAI Agents SDK](https://img.shields.io/badge/OpenAI%20Agents%20SDK-agentic%20orchestration-412991?logo=openai&logoColor=white)
 ![inspect-ai](https://img.shields.io/badge/inspect--ai-agent%20evals-7B61FF)
 ![ib_async](https://img.shields.io/badge/ib__async-Interactive%20Brokers-D71920)
@@ -13,10 +9,12 @@ Experimental agentic pipeline that analyses an equity portfolio using
 
 ## Getting started
 
-### Demo run (w/o IB or OpenAI credentials)
+### Demo run
+
+No IBKR or OpenAI credentials for `--demo` run needed.
 
 ```sh
-uv sync
+uv sync --no-dev
 uv run portfolio-agents --demo   # fake IBKR data + fake LLM
 ```
 
@@ -24,13 +22,12 @@ uv run portfolio-agents --demo   # fake IBKR data + fake LLM
 
 > ⚠️ The IB connection is read-only — the agents analyse, they never trade.
 
-Requires [TWS](https://www.interactivebrokers.com/en/trading/tws.php) or
-[IB Gateway](https://www.interactivebrokers.com/en/trading/ibgateway-stable.php) running with API access enabled (paper account recommended), plus an [OpenAI API key](https://platform.openai.com/).
+Requires [TWS](https://www.interactivebrokers.com/en/trading/tws.php) or [IB Gateway](https://www.interactivebrokers.com/en/trading/ibgateway-stable.php) running with API access enabled (paper account recommended), plus an [OpenAI API key](https://platform.openai.com/).
 
 ```sh
 cp .env.example .env         # fill in OPENAI_API_KEY
 
-uv sync
+uv sync --no-dev
 uv run portfolio-agents      # writes reports/report-NNN.md
 ```
 
@@ -67,7 +64,7 @@ uv run inspect eval evals/tasks.py
 uv run inspect view
 ```
 
-The eval model defaults to the pipeline model (`INSPECT_EVAL_MODEL=openai/${OPENAI_DEFAULT_MODEL}` in `.env`); the rubric grader is pinned separately (`INSPECT_GRADER_MODEL`). Logs land in `./logs/`.
+Env var `INSPECT_EVAL_MODEL` sets agents model during eval run, `INSPECT_GRADER_MODEL` pins rubric grader. Logs land in `./logs/`.
 
 ### Case catalogue
 
