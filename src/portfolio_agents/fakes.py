@@ -14,7 +14,7 @@ import datetime as dt
 import json
 import math
 import random
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 
 import pandas as pd
@@ -214,7 +214,7 @@ class FakeIBKRClient:
 @contextlib.asynccontextmanager
 async def fake_ibkr_connection(
     log: Callable[[str], None] = print,
-) -> AsyncIterator[FakeIBKRClient]:
+) -> AsyncGenerator[FakeIBKRClient]:
     """Mirrors ibkr_connection()'s shape; yields a FakeIBKRClient (no connect/disconnect)."""
     log("fake IBKR client")
     yield FakeIBKRClient()
@@ -286,7 +286,7 @@ class FakeModel(Model):
         )
         return ModelResponse(output=[message], usage=Usage(), response_id=None)
 
-    def stream_response(self, *_: object, **__: object) -> AsyncIterator[object]:
+    def stream_response(self, *_: object, **__: object) -> AsyncGenerator[object]:
         raise NotImplementedError("FakeModel does not support streaming")
 
 

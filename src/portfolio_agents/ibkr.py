@@ -10,7 +10,7 @@ import contextlib
 import datetime as dt
 import math
 from collections import Counter
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncGenerator, Callable
 
 from ib_async import IB, Contract, ContractDetails, PortfolioItem, RequestError
 
@@ -111,7 +111,7 @@ class IBKRClient:
 @contextlib.asynccontextmanager
 async def ibkr_connection(
     settings: Settings, log: Callable[[str], None] = print
-) -> AsyncIterator[IBKRClient]:
+) -> AsyncGenerator[IBKRClient]:
     """Owns the connect/disconnect lifecycle of the one IB session."""
     log(f"IBKR at {settings.ib_host}:{settings.ib_port}")
     ib = IB()

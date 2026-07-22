@@ -6,7 +6,7 @@ completed phases retain a ✔ (a failed one a ✖), and each phase shows elapsed
 and its latest detail. Rendering stays on stderr so stdout keeps the report path.
 """
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 
 from rich.console import Console
@@ -46,7 +46,7 @@ class StageTracker:
         self._progress.update(self._current[1], detail=msg)
 
     @contextmanager
-    def live(self) -> Iterator[StageTracker]:
+    def live(self) -> Generator[StageTracker]:
         """Render the stepper live to stderr for the duration of the block."""
         with self._progress:
             try:

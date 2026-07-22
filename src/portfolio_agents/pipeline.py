@@ -9,7 +9,7 @@ it open.
 import asyncio
 import contextlib
 import json
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -58,7 +58,7 @@ def portfolio_payload(
 
 
 @contextlib.asynccontextmanager
-async def _deadline() -> AsyncIterator[None]:
+async def _deadline() -> AsyncGenerator[None]:
     """asyncio.timeout(PIPELINE_TIMEOUT_S), expiring as a FatalError instead of a traceback."""
     try:
         async with asyncio.timeout(PIPELINE_TIMEOUT_S):
